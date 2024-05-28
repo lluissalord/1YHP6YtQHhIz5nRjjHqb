@@ -20,11 +20,12 @@ def confirm_no_assistance(name_surname: str, invitations_df: pd.DataFrame, conn:
         "Is coming": [False],
     }).set_index(["Name Surname"])
     invitations_df = pd.concat([invitations_df, new_entry]).reset_index(drop=False)
-    with st.status("Enviant confirmació de no assitència... 😢"):
+    with st.status("Enviant confirmació de no assitència... 😢") as status:
         conn.update(
             worksheet="Invitations",
             data=invitations_df
         )
+
 
 def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, accompanyant_of: str = "") -> bool:
     if name_surname:
@@ -66,11 +67,13 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                 if exists:
                     invitations_df = invitations_df.drop(name_surname)
                 invitations_df = pd.concat([invitations_df, new_entry]).reset_index(drop=False)
-                with st.status("Enviant confirmació..."):
+                status_placeholder = st.empty()
+                with status_placeholder.status("Enviant confirmació...") as status:
                     conn.update(
                         worksheet="Invitations",
                         data=invitations_df
                     )
+                status_placeholder.empty()
                 st.success("Confirmació enviada. Contam amb voltros! 🥳")
                 st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
                 return True
@@ -79,7 +82,8 @@ st.set_page_config("Confirma assistència", page_icon="✍️", initial_sidebar_
 
 st.title("Confirma assistència")
 
-with st.status("Carregant dades...") as status:
+status_placeholder = st.empty()
+with status_placeholder.status("Carregant dades...") as status:
     conn = st.connection("gsheets", type=GSheetsConnection)
 
     invitations_df = conn.read(
@@ -91,6 +95,7 @@ with st.status("Carregant dades...") as status:
     invitations_df = invitations_df[invitations_df["Name Surname"].notnull()].set_index(["Name Surname"])
     invitations_df["Is coming"] = invitations_df["Is coming"].astype(bool)
     status.update(label="Dades carregades! 🎉", state="complete", expanded=False)
+status_placeholder.empty()
 
 
 name_surname = st.text_input("Nom i Llinatge (Cognom 😜)")
