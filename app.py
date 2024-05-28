@@ -28,20 +28,20 @@ def confirm_no_assistance(name_surname: str, invitations_df: pd.DataFrame, conn:
             data=invitations_df
         )
 
-def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection) -> None:
+def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, accompanyant_of: str = "") -> bool:
     if name_surname:
         try:
-            exists = name_surname in set(invitations_df.index)
+            exists = invitations_df.loc[name_surname, "Is coming"].all()
             if exists and invitations_df.loc[name_surname, "Is coming"].all():
                 st.info(f"Ja comptam amb tu {name_surname} 🥳. Envia de nou en cas de voler modificar colcuna dada.")
         except KeyError:
             exists = False
 
         with st.form(f"invitation_form_{name_surname}"):
-            source_bus = st.text_input("Bus anada")
-            destination_bus = st.text_input("Bus tornada")
-            allergies = st.text_input("Alèrgies o intoleràncies", value=invitations_df.loc[name_surname, "Allergies"] if exists else None)
-            songs = st.text_input("Cançons que t'agradaria que sonessin", value=invitations_df.loc[name_surname, "Songs"] if exists else None)
+            source_bus = st.selectbox("Bus anada", ["No necessit", "Ciutadella", "Maó"], format_func=lambda opt: opt if opt != "Maó" else "Maó (possibles aturades altres pobles)")
+            destination_bus = st.selectbox("Bus tornada", ["No necessit", "Ciutadella", "Maó"], format_func=lambda opt: opt if opt != "Maó" else "Maó (possibles aturades altres pobles)")
+            allergies = st.text_input("Alèrgies o intoleràncies", value=invitations_df.loc[name_surname, "Allergies"] if exists else "")
+            songs = st.text_area("Cançons que t'agradaria que sonessin", value=invitations_df.loc[name_surname, "Songs"] if exists else "")
 
             submit = st.form_submit_button("Enviar")
 
@@ -49,7 +49,7 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                 new_entry = pd.DataFrame({
                     "Name Surname": [name_surname],
                     "Is coming": [True],
-                    "Accompanyants of": [],
+                    "Accompanyants of": [accompanyant_of],
                     "Source Bus": [source_bus],
                     "Destination Bus": [destination_bus],
                     "Allergies": [allergies],
@@ -62,8 +62,8 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                         data=invitations_df
                     )
                 st.success("Confirmació enviada. Contam amb voltros! 🥳")
-                st.balloons()
                 st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
+                return True
         
 
 with st.status("Carregant dades...") as status:
@@ -85,7 +85,9 @@ name_surname = st.text_input("Nom i Llinatge (Cognom 😜)")
 
 left_col, right_col = st.columns([2, 1])
 with left_col.popover("Compta amb jo! 🙌", use_container_width=True, disabled=not name_surname):
-    additional_data(name_surname=name_surname, invitations_df=invitations_df, conn=conn)
+    sent = additional_data(name_surname=name_surname, invitations_df=invitations_df, conn=conn)
+if sent:
+    st.balloons()
 
 if right_col.button("M'ho perdre 😢", use_container_width=True, disabled=not name_surname):
     confirm_no_assistance(name_surname=name_surname, invitations_df=invitations_df, conn=conn)
