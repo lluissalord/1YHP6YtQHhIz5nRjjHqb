@@ -168,6 +168,13 @@ def show_maps():
         </a>""",
         unsafe_allow_html=True
     )
+    st.markdown(
+        f"""<a href="{maps_url}">
+        <img src="{static_filepath('place_maps.png')}" width="100%">
+        </a>""",
+        unsafe_allow_html=True
+    )
+    st.markdown(f"[![Google Maps]({static_filepath('place_maps_with_crosses.png')})]({maps_url})", unsafe_allow_html=True)
     st.link_button("🗺️ Google Maps 🗺️", url="https://maps.app.goo.gl/8iKreRxjmVgRahaJA", use_container_width=True)
     
 def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
