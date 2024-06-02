@@ -113,11 +113,11 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
             try:
                 default_source_bus_index = bus_options.index(invitations_df.loc[name_surname, "Source Bus"])
             except (KeyError, ValueError):
-                default_source_bus_index = None
+                default_source_bus_index = 0
             try:
                 default_destination_bus_index = bus_options.index(invitations_df.loc[name_surname, "Destination Bus"])
             except (KeyError, ValueError):
-                default_destination_bus_index = None
+                default_destination_bus_index = 0
             source_bus = st.selectbox("Bus anada", bus_options, format_func=bus_format_func, index=default_source_bus_index)
             destination_bus = st.selectbox("Bus tornada", bus_options, format_func=bus_format_func, index=default_destination_bus_index)
             allergies = st.text_input("Alèrgies o intoleràncies", value=invitations_df.loc[name_surname, "Allergies"] if exists else "")
@@ -177,6 +177,9 @@ def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
     invitations_df["Is coming"] = invitations_df["Is coming"].astype(bool)
     invitations_df["Babys"] = invitations_df["Babys"].astype(int)
     invitations_df["Kids"] = invitations_df["Kids"].astype(int)
+    invitations_df["Accompanyant of"] = invitations_df["Accompanyant of"].fillna("")
+    invitations_df["Allergies"] = invitations_df["Allergies"].fillna("")
+    invitations_df["Songs"] = invitations_df["Songs"].fillna("")
     return invitations_df
 
 def on_name_surname_change(*args, **kwargs) -> None:
@@ -242,6 +245,7 @@ if "data_sent" not in st.session_state:
     st.session_state["data_sent"] = False
 
 if st.session_state["data_sent"]:
+    st.info("Modifica les dades enviades tantes vegades com vulguis tornant a omplir el formulari")
     st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
     st.balloons()
     st.session_state["data_sent"] = False
