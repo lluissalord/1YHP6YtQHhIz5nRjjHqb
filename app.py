@@ -185,7 +185,8 @@ def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
 def on_name_surname_change(*args, **kwargs) -> None:
     st.session_state["data_sent"] = False
 
-st.set_page_config("Confirma assistència", page_icon="✍️", initial_sidebar_state="collapsed", layout="centered")
+st.set_page_config("Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="centered")
+st.title("🥂 Boda Iria i Lluis 🥂")
 
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
 show_maps()
