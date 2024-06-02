@@ -1,4 +1,5 @@
 import base64
+import os
 from random import randint
 import numpy as np
 import pandas as pd
@@ -152,12 +153,16 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                 return True
 
 @st.cache_data
-def base64_image(image_file: str) -> str:
-    return base64.b64encode(open(image_file, "rb").read()).decode()
+def static_base64_image(image_filename: str) -> str:
+    if os.path.exists("app/static/"):
+        image_filepath = f"app/static/{image_filename}"
+    else:
+        image_filepath = f"./static/{image_filename}"
+    return base64.b64encode(open(image_filepath, "rb").read()).decode()
 
 def show_maps():
     maps_url = "https://maps.app.goo.gl/8iKreRxjmVgRahaJA"
-    image_data = base64_image("statics/place_maps_with_crosses.png")
+    image_data = static_base64_image("place_maps_with_crosses.png")
     st.markdown(
         f"""<a href="{maps_url}">
         <img src="data:image/png;base64,{image_data}" width="100%">
