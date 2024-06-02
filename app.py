@@ -154,18 +154,17 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
 
 @st.cache_data
 def static_base64_image(image_filename: str) -> str:
-    if os.path.exists("app/static/"):
-        image_filepath = f"app/static/{image_filename}"
-    else:
-        image_filepath = f"./static/{image_filename}"
-    return base64.b64encode(open(image_filepath, "rb").read()).decode()
+    return base64.b64encode(open(static_filepath(image_filename), "rb").read()).decode()
+
+def static_filepath(image_filename: str) -> str:
+    return f"./app/static/{image_filename}"
+
 
 def show_maps():
     maps_url = "https://maps.app.goo.gl/8iKreRxjmVgRahaJA"
-    image_data = static_base64_image("place_maps_with_crosses.png")
     st.markdown(
         f"""<a href="{maps_url}">
-        <img src="data:image/png;base64,{image_data}" width="100%">
+        <img src="{static_filepath('place_maps_with_crosses.png')}" width="100%">
         </a>""",
         unsafe_allow_html=True
     )
