@@ -1,10 +1,13 @@
 import base64
 import os
 from random import randint
-import numpy as np
+from datetime import datetime
+import asyncio
+from time import sleep, time
 import pandas as pd
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
+from streamlit.delta_generator import DeltaGenerator
 
 RANDOM_APM_VIDEOS = [
     {
@@ -45,6 +48,44 @@ RANDOM_APM_VIDEOS = [
     }
 ]
 
+async def countdown(container: DeltaGenerator, final_datetime: datetime, infinte_loop: bool = False) -> None:
+    done_once = False
+    while infinte_loop or not done_once:
+        done_once = True
+        timedelta = final_datetime - datetime.now()
+        if timedelta.total_seconds() < 0:
+            days, hours, minutes, seconds = 0, 0, 0, 0
+        else:
+            days, hours, minutes, seconds = timedelta.days, timedelta.seconds // 3600, timedelta.seconds // 60 % 60, timedelta.seconds % 60
+        days_col, hours_col, minutes_col, seconds_col = container.columns(4)
+        
+        st.markdown(
+            """
+            <style>
+            div[data-testid="stMetric"]{
+            border: 2px solid rgba(225, 225, 225, 1);
+            border-radius: 20px;
+            text-align: center;
+            }
+            div[data-testid="stMetric"] > label[data-testid="stMetricLabel"]{
+            display: flex;
+            }
+            div[data-testid="stMetric"] > label[data-testid="stMetricLabel"] > div p {
+            font-size: 200% !important;
+            font-family: cursive;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        days_col.metric("Dies", days)
+        hours_col.metric("Hores", hours)
+        minutes_col.metric("Minuts", minutes)
+        seconds_col.metric("Segons", seconds)
+        if infinte_loop:
+            r = await asyncio.sleep(1)
+
 def confirm_no_assistance(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, play_video: bool = True) -> None:
     st.write("Una llàstima que no venguis, ho celebrarem junts un altra moment 🤗")
 
@@ -73,16 +114,20 @@ def confirm_no_assistance(name_surname: str, invitations_df: pd.DataFrame, conn:
 
 @st.experimental_dialog("Acompanyant")
 def acompanyant_dialog(accompanyant_of: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, index: int = 0) -> None:
+    st.session_state["dialog_open"] = True
     acompanyant_name_surname = st.text_input("Nom i Llinatge (Cognom 😜)", key=f"{accompanyant_of}")
     if acompanyant_name_surname:
         if additional_data(name_surname=acompanyant_name_surname, invitations_df=invitations_df, conn=conn, accompanyant_of=accompanyant_of):
+            st.session_state["dialog_open"] = False
             st.rerun()
 
 @st.experimental_dialog("Dades addicionals")
 def additional_data_dialog(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, accompanyant_of: str = "") -> None:
+    st.session_state["dialog_open"] = True
     sent = additional_data(name_surname=name_surname, invitations_df=invitations_df, conn=conn, accompanyant_of=accompanyant_of)
     if sent:
         st.session_state["data_sent"] = True
+        st.session_state["dialog_open"] = False
         st.rerun()
 
 def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, accompanyant_of: str = "") -> bool:
@@ -121,7 +166,7 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                 default_destination_bus_index = 0
             source_bus = st.selectbox("Bus anada", bus_options, format_func=bus_format_func, index=default_source_bus_index)
             destination_bus = st.selectbox("Bus tornada", bus_options, format_func=bus_format_func, index=default_destination_bus_index)
-            allergies = st.text_input("Alèrgies o intoleràncies", value=invitations_df.loc[name_surname, "Allergies"] if exists else "")
+            allergies = st.text_input("Alèrgies, intoleràncies o dietes especials", value=invitations_df.loc[name_surname, "Allergies"] if exists else "")
             songs = st.text_area("Cançons que t'agradaria que sonessin", value=invitations_df.loc[name_surname, "Songs"] if exists else "")
 
             submit = st.form_submit_button("Enviar")
@@ -154,27 +199,35 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
 
 @st.cache_data
 def static_base64_image(image_filename: str) -> str:
-    return base64.b64encode(open(static_filepath(image_filename), "rb").read()).decode()
+    return base64.b64encode(open(os.path.join(".","static", image_filename), "rb").read()).decode()
 
 def static_filepath(image_filename: str) -> str:
     return f"./app/static/{image_filename}"
 
+def set_background_image(image_filename: str) -> None:
+    st.markdown(
+        f"""
+        <style>
+        [data-testid="stAppViewContainer"]{{
+        background-image: url("{static_filepath(image_filename)}");
+        background-size: cover;
+        }}
+        [data-testid="stHeader"]{{
+        background-color: rgba(0,0,0,0);
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 def show_maps():
     maps_url = "https://maps.app.goo.gl/8iKreRxjmVgRahaJA"
     st.markdown(
         f"""<a href="{maps_url}">
-        <img src="{static_filepath('place_maps_with_crosses.png')}" width="100%">
+        <img src="{static_filepath('place_maps_from_mao_creus.png')}" width="100%">
         </a>""",
         unsafe_allow_html=True
     )
-    st.markdown(
-        f"""<a href="{maps_url}">
-        <img src="{static_filepath('place_maps.png')}" width="100%">
-        </a>""",
-        unsafe_allow_html=True
-    )
-    st.markdown(f"[![Google Maps]({static_filepath('place_maps_with_crosses.png')})]({maps_url})", unsafe_allow_html=True)
     st.link_button("🗺️ Google Maps 🗺️", url="https://maps.app.goo.gl/8iKreRxjmVgRahaJA", use_container_width=True)
     
 def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
@@ -186,8 +239,8 @@ def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
     )
     invitations_df = invitations_df[invitations_df["Name Surname"].notnull()].set_index(["Name Surname"])
     invitations_df["Is coming"] = invitations_df["Is coming"].astype(bool)
-    invitations_df["Babys"] = invitations_df["Babys"].astype(int)
-    invitations_df["Kids"] = invitations_df["Kids"].astype(int)
+    invitations_df["Babys"] = invitations_df["Babys"].fillna(0).astype(int)
+    invitations_df["Kids"] = invitations_df["Kids"].fillna(0).astype(int)
     invitations_df["Accompanyant of"] = invitations_df["Accompanyant of"].fillna("")
     invitations_df["Allergies"] = invitations_df["Allergies"].fillna("")
     invitations_df["Songs"] = invitations_df["Songs"].fillna("")
@@ -198,6 +251,15 @@ def on_name_surname_change(*args, **kwargs) -> None:
 
 st.set_page_config("Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="centered")
 st.title("🥂 Boda Iria i Lluis 🥂")
+
+WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
+
+set_background_image("background.jpg")
+
+
+st.markdown("## Compte enrera! 🫣")
+countdown_placeholder = st.empty()
+asyncio.run(countdown(container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=False))
 
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
 show_maps()
@@ -219,9 +281,8 @@ left_col, right_col = st.columns([2, 1])
 if left_col.button(":green[Compta amb jo! 🙌]", use_container_width=True):
     if not name_surname:
         st.error("Necessites un nom i un cognom 😅")
-        sent = False
     else:
-        sent = additional_data_dialog(name_surname=name_surname, invitations_df=invitations_df, conn=conn)
+        additional_data_dialog(name_surname=name_surname, invitations_df=invitations_df, conn=conn)
 
 if right_col.button(":red[M'ho perdré 😢]", use_container_width=True):
     if not name_surname:
@@ -261,3 +322,14 @@ if st.session_state["data_sent"]:
     st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
     st.balloons()
     st.session_state["data_sent"] = False
+
+left_col, _, right_col = st.columns([2, 1, 1])
+left_col.caption("Made with ❤️ by Iria and Lluis")
+right_col.caption("Background by [Freepik](www.freepik.es)")
+
+# MUST BE AT THE END
+if not "dialog_open" in st.session_state or not st.session_state["dialog_open"]:
+    if "dialog_open" in st.session_state:
+        del st.session_state["dialog_open"]
+    else:
+        asyncio.run(countdown(container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=True))
