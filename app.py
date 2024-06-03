@@ -387,6 +387,7 @@ with st.status("Carregant imatges..."):
     download_drive_folder(folder_id=PHOTOS_FOLDER_ID, folder_path="./static/private")
 
 st.image("./static/private/IMG_20240408_112715.jpg", use_column_width=True)
+st.caption("Noltros de viatge!")
 
 st.markdown("## Compte enrera! 🫣")
 countdown_placeholder = st.empty()
