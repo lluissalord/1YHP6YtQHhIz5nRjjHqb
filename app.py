@@ -1,54 +1,92 @@
-import base64
-import os
-from random import randint
-from datetime import datetime
 import asyncio
-from time import sleep, time
+import base64
+import io
+import os
+from datetime import datetime
+from random import randint
+
 import pandas as pd
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 from streamlit.delta_generator import DeltaGenerator
+from streamlit_gsheets import GSheetsConnection
 
 RANDOM_APM_VIDEOS = [
-    {
-        "data": "https://www.youtube.com/watch?v=dcrR2vs2jKo", "start_time": 21
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=S7UM5zdPGpc", "start_time": 9
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=sFlAEv8xpjc", "start_time": 13
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=Y2Zj84kNEKw", "start_time": 8
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=FRVcayal19w"
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=6eXG31O9mHU"
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=14MwPB9sgJw", "start_time": 7
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=oB6LnFYkTzs"
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=R3d2m1-4AtY"
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=P_EhjbUaKY0"
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=ayFYZ-qroXg"
-    },
-    {
-        "data": "https://www.youtube.com/watch?v=gekAv8vRQd8", "start_time": 10
-    }
+    {"data": "https://www.youtube.com/watch?v=dcrR2vs2jKo", "start_time": 21},
+    {"data": "https://www.youtube.com/watch?v=S7UM5zdPGpc", "start_time": 9},
+    {"data": "https://www.youtube.com/watch?v=sFlAEv8xpjc", "start_time": 13},
+    {"data": "https://www.youtube.com/watch?v=Y2Zj84kNEKw", "start_time": 8},
+    {"data": "https://www.youtube.com/watch?v=FRVcayal19w"},
+    {"data": "https://www.youtube.com/watch?v=6eXG31O9mHU"},
+    {"data": "https://www.youtube.com/watch?v=14MwPB9sgJw", "start_time": 7},
+    {"data": "https://www.youtube.com/watch?v=oB6LnFYkTzs"},
+    {"data": "https://www.youtube.com/watch?v=R3d2m1-4AtY"},
+    {"data": "https://www.youtube.com/watch?v=P_EhjbUaKY0"},
+    {"data": "https://www.youtube.com/watch?v=ayFYZ-qroXg"},
+    {"data": "https://www.youtube.com/watch?v=gekAv8vRQd8", "start_time": 10},
 ]
 
-async def countdown(container: DeltaGenerator, final_datetime: datetime, infinte_loop: bool = False) -> None:
+# CREDENTIALS = st.cache_resource(ttl=600, show_spinner=False)(
+#     service_account.Credentials.from_service_account_info
+# )(
+#     st.secrets["gcp_service_account"],
+#     scopes=[
+#         "https://www.googleapis.com/auth/drive",
+#     ],
+# )
+# DRIVE_SERVICE = st.cache_resource(ttl=600, show_spinner=False)(build)(
+#     "drive", "v3", credentials=CREDENTIALS
+# )
+CREDENTIALS = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=[
+        "https://www.googleapis.com/auth/drive",
+    ],
+)
+DRIVE_SERVICE = build("drive", "v3", credentials=CREDENTIALS)
+
+PHOTOS_FOLDER_ID = "1nrQyaN5LSraq5I_g1NwdciOfgp0_kwMx"
+
+
+def download_drive_folder(folder_id: str, folder_path: str) -> None:
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    file_list = (
+        DRIVE_SERVICE.files()
+        .list(
+            q=f"'{folder_id}' in parents and trashed = false",
+            # q="trashed = false",
+            fields="files(id, name, mimeType)",
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+    for file in file_list.get("files", []):
+        print(file)
+        if file["mimeType"] == "application/vnd.google-apps.folder":
+            download_drive_folder(
+                folder_id=file["id"],
+                folder_path=os.path.join(folder_path, file["name"]),
+            )
+        else:
+            file_path = os.path.join(folder_path, file["name"])
+            if os.path.exists(file_path):
+                continue
+
+            request = DRIVE_SERVICE.files().get_media(fileId=file["id"])
+            f = io.FileIO(file_path, "wb")
+            downloader = MediaIoBaseDownload(f, request)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+
+
+async def countdown(
+    container: DeltaGenerator, final_datetime: datetime, infinte_loop: bool = False
+) -> None:
     done_once = False
     while infinte_loop or not done_once:
         done_once = True
@@ -56,9 +94,14 @@ async def countdown(container: DeltaGenerator, final_datetime: datetime, infinte
         if timedelta.total_seconds() < 0:
             days, hours, minutes, seconds = 0, 0, 0, 0
         else:
-            days, hours, minutes, seconds = timedelta.days, timedelta.seconds // 3600, timedelta.seconds // 60 % 60, timedelta.seconds % 60
+            days, hours, minutes, seconds = (
+                timedelta.days,
+                timedelta.seconds // 3600,
+                timedelta.seconds // 60 % 60,
+                timedelta.seconds % 60,
+            )
         days_col, hours_col, minutes_col, seconds_col = container.columns(4)
-        
+
         st.markdown(
             """
             <style>
@@ -78,7 +121,7 @@ async def countdown(container: DeltaGenerator, final_datetime: datetime, infinte
             """,
             unsafe_allow_html=True,
         )
-        
+
         days_col.metric("Dies", days)
         hours_col.metric("Hores", hours)
         minutes_col.metric("Minuts", minutes)
@@ -86,7 +129,13 @@ async def countdown(container: DeltaGenerator, final_datetime: datetime, infinte
         if infinte_loop:
             r = await asyncio.sleep(1)
 
-def confirm_no_assistance(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, play_video: bool = True) -> None:
+
+def confirm_no_assistance(
+    name_surname: str,
+    invitations_df: pd.DataFrame,
+    conn: GSheetsConnection,
+    play_video: bool = True,
+) -> None:
     st.write("Una llàstima que no venguis, ho celebrarem junts un altra moment 🤗")
 
     if play_video:
@@ -95,47 +144,73 @@ def confirm_no_assistance(name_surname: str, invitations_df: pd.DataFrame, conn:
         # Altres opcions:
         # Que tinguem sort (si em dius adeu) - Lluis Llach
         # st.video("https://www.youtube.com/watch?v=JzW4trGkVds", start_time=11, autoplay=True)
-        #- Goodbye My Lover - James Blunt
+        # - Goodbye My Lover - James Blunt
         # Txarango - Tanca els ulls (a 0:59 o 2:04)
         # Let Her Go de Passenger
 
-    new_entry = pd.DataFrame({
-        "Name Surname": [name_surname],
-        "Is coming": [False],
-    }).set_index(["Name Surname"])
+    new_entry = pd.DataFrame(
+        {
+            "Name Surname": [name_surname],
+            "Is coming": [False],
+        }
+    ).set_index(["Name Surname"])
     if name_surname in invitations_df.index:
         invitations_df = invitations_df.drop(name_surname)
     invitations_df = pd.concat([invitations_df, new_entry]).reset_index(drop=False)
     with st.status("Enviant confirmació de no assitència... 😢") as status:
-        conn.update(
-            worksheet="Invitations",
-            data=invitations_df
-        )
+        conn.update(worksheet="Invitations", data=invitations_df)
+
 
 @st.experimental_dialog("Acompanyant")
-def acompanyant_dialog(accompanyant_of: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, index: int = 0) -> None:
+def acompanyant_dialog(
+    accompanyant_of: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, index: int = 0
+) -> None:
     st.session_state["dialog_open"] = True
     acompanyant_name_surname = st.text_input("Nom i Llinatge (Cognom 😜)", key=f"{accompanyant_of}")
     if acompanyant_name_surname:
-        if additional_data(name_surname=acompanyant_name_surname, invitations_df=invitations_df, conn=conn, accompanyant_of=accompanyant_of):
+        if additional_data(
+            name_surname=acompanyant_name_surname,
+            invitations_df=invitations_df,
+            conn=conn,
+            accompanyant_of=accompanyant_of,
+        ):
             st.session_state["dialog_open"] = False
             st.rerun()
 
+
 @st.experimental_dialog("Dades addicionals")
-def additional_data_dialog(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, accompanyant_of: str = "") -> None:
+def additional_data_dialog(
+    name_surname: str,
+    invitations_df: pd.DataFrame,
+    conn: GSheetsConnection,
+    accompanyant_of: str = "",
+) -> None:
     st.session_state["dialog_open"] = True
-    sent = additional_data(name_surname=name_surname, invitations_df=invitations_df, conn=conn, accompanyant_of=accompanyant_of)
+    sent = additional_data(
+        name_surname=name_surname,
+        invitations_df=invitations_df,
+        conn=conn,
+        accompanyant_of=accompanyant_of,
+    )
     if sent:
         st.session_state["data_sent"] = True
         st.session_state["dialog_open"] = False
         st.rerun()
 
-def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GSheetsConnection, accompanyant_of: str = "") -> bool:
+
+def additional_data(
+    name_surname: str,
+    invitations_df: pd.DataFrame,
+    conn: GSheetsConnection,
+    accompanyant_of: str = "",
+) -> bool:
     if name_surname:
         try:
             exists = invitations_df.loc[name_surname, "Is coming"].all()
             if exists and invitations_df.loc[name_surname, "Is coming"].all():
-                st.info(f"Ja comptam amb tu {name_surname} 🥳. Envia de nou en cas de voler modificar colcuna dada.")
+                st.info(
+                    f"Ja comptam amb tu {name_surname} 🥳. Envia de nou en cas de voler modificar colcuna dada."
+                )
         except KeyError:
             exists = False
 
@@ -146,28 +221,60 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                 default_number_of_kids = invitations_df.loc[name_surname, "Kids"] or 0
             except (KeyError, ValueError):
                 default_number_of_baby = default_number_of_kids = 0
-            baby_or_kids = st.radio("Vens amb bebes o fiets? 👶👦", options=[False, True], format_func=lambda x: "Sí" if x else "No", index=int(bool(default_number_of_baby or default_number_of_kids)), horizontal=True)
+            baby_or_kids = st.radio(
+                "Vens amb bebes o fiets? 👶👦",
+                options=[False, True],
+                format_func=lambda x: "Sí" if x else "No",
+                index=int(bool(default_number_of_baby or default_number_of_kids)),
+                horizontal=True,
+            )
             if baby_or_kids:
-                number_of_baby = st.number_input("Nombre de bebes", min_value=0, max_value=10, value=default_number_of_baby)
-                number_of_kids = st.number_input("Nombre de fiets", min_value=0, max_value=10, value=default_number_of_kids)
+                number_of_baby = st.number_input(
+                    "Nombre de bebes", min_value=0, max_value=10, value=default_number_of_baby
+                )
+                number_of_kids = st.number_input(
+                    "Nombre de fiets", min_value=0, max_value=10, value=default_number_of_kids
+                )
             else:
                 number_of_baby = number_of_kids = 0
 
         with st.form(f"invitation_form_{name_surname}", border=False):
             bus_options = ["No necessit", "Ciutadella", "Maó"]
-            bus_format_func = lambda opt: opt if opt != "Maó" else "Maó (possibles aturades altres pobles)"
+            bus_format_func = lambda opt: (
+                opt if opt != "Maó" else "Maó (possibles aturades altres pobles)"
+            )
             try:
-                default_source_bus_index = bus_options.index(invitations_df.loc[name_surname, "Source Bus"])
+                default_source_bus_index = bus_options.index(
+                    invitations_df.loc[name_surname, "Source Bus"]
+                )
             except (KeyError, ValueError):
                 default_source_bus_index = 0
             try:
-                default_destination_bus_index = bus_options.index(invitations_df.loc[name_surname, "Destination Bus"])
+                default_destination_bus_index = bus_options.index(
+                    invitations_df.loc[name_surname, "Destination Bus"]
+                )
             except (KeyError, ValueError):
                 default_destination_bus_index = 0
-            source_bus = st.selectbox("Bus anada", bus_options, format_func=bus_format_func, index=default_source_bus_index)
-            destination_bus = st.selectbox("Bus tornada", bus_options, format_func=bus_format_func, index=default_destination_bus_index)
-            allergies = st.text_input("Alèrgies, intoleràncies o dietes especials", value=invitations_df.loc[name_surname, "Allergies"] if exists else "")
-            songs = st.text_area("Cançons que t'agradaria que sonessin", value=invitations_df.loc[name_surname, "Songs"] if exists else "")
+            source_bus = st.selectbox(
+                "Bus anada",
+                bus_options,
+                format_func=bus_format_func,
+                index=default_source_bus_index,
+            )
+            destination_bus = st.selectbox(
+                "Bus tornada",
+                bus_options,
+                format_func=bus_format_func,
+                index=default_destination_bus_index,
+            )
+            allergies = st.text_input(
+                "Alèrgies, intoleràncies o dietes especials",
+                value=invitations_df.loc[name_surname, "Allergies"] if exists else "",
+            )
+            songs = st.text_area(
+                "Cançons que t'agradaria que sonessin",
+                value=invitations_df.loc[name_surname, "Songs"] if exists else "",
+            )
 
             submit = st.form_submit_button("Enviar")
 
@@ -181,7 +288,7 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                     "Source Bus": [source_bus],
                     "Destination Bus": [destination_bus],
                     "Allergies": [allergies],
-                    "Songs": [songs]
+                    "Songs": [songs],
                 }
                 new_entry = pd.DataFrame(data).set_index(["Name Surname"])
                 if exists:
@@ -189,20 +296,20 @@ def additional_data(name_surname: str, invitations_df: pd.DataFrame, conn: GShee
                 invitations_df = pd.concat([invitations_df, new_entry]).reset_index(drop=False)
                 status_placeholder = st.empty()
                 with status_placeholder.status("Enviant confirmació...") as status:
-                    conn.update(
-                        worksheet="Invitations",
-                        data=invitations_df
-                    )
+                    conn.update(worksheet="Invitations", data=invitations_df)
                 status_placeholder.empty()
                 st.success("Confirmació enviada. Contam amb voltros! 🥳")
                 return True
 
+
 @st.cache_data
 def static_base64_image(image_filename: str) -> str:
-    return base64.b64encode(open(os.path.join(".","static", image_filename), "rb").read()).decode()
+    return base64.b64encode(open(os.path.join(".", "static", image_filename), "rb").read()).decode()
+
 
 def static_filepath(image_filename: str) -> str:
     return f"./app/static/{image_filename}"
+
 
 def set_background_image(image_filename: str) -> None:
     st.markdown(
@@ -217,8 +324,9 @@ def set_background_image(image_filename: str) -> None:
         }}
         </style>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
+
 
 def show_maps():
     maps_url = "https://maps.app.goo.gl/8iKreRxjmVgRahaJA"
@@ -226,18 +334,33 @@ def show_maps():
         f"""<a href="{maps_url}">
         <img src="{static_filepath('place_maps_from_mao_creus.png')}" width="100%">
         </a>""",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-    st.link_button("🗺️ Google Maps 🗺️", url="https://maps.app.goo.gl/8iKreRxjmVgRahaJA", use_container_width=True)
-    
+    st.link_button(
+        "🗺️ Google Maps 🗺️", url="https://maps.app.goo.gl/8iKreRxjmVgRahaJA", use_container_width=True
+    )
+
+
 def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
     invitations_df = conn.read(
         worksheet="Invitations",
         ttl=ttl,
-        usecols=["Name Surname", "Is coming", "Babys", "Kids", "Accompanyant of", "Source Bus", "Destination Bus", "Allergies", "Songs"],
+        usecols=[
+            "Name Surname",
+            "Is coming",
+            "Babys",
+            "Kids",
+            "Accompanyant of",
+            "Source Bus",
+            "Destination Bus",
+            "Allergies",
+            "Songs",
+        ],
         skip_blank_lines=True,
     )
-    invitations_df = invitations_df[invitations_df["Name Surname"].notnull()].set_index(["Name Surname"])
+    invitations_df = invitations_df[invitations_df["Name Surname"].notnull()].set_index(
+        ["Name Surname"]
+    )
     invitations_df["Is coming"] = invitations_df["Is coming"].astype(bool)
     invitations_df["Babys"] = invitations_df["Babys"].fillna(0).astype(int)
     invitations_df["Kids"] = invitations_df["Kids"].fillna(0).astype(int)
@@ -246,20 +369,30 @@ def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
     invitations_df["Songs"] = invitations_df["Songs"].fillna("")
     return invitations_df
 
+
 def on_name_surname_change(*args, **kwargs) -> None:
     st.session_state["data_sent"] = False
 
-st.set_page_config("Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="centered")
+
+st.set_page_config(
+    "Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="centered"
+)
 st.title("🥂 Boda Iria i Lluis 🥂")
 
 WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
 
 set_background_image("background.jpg")
 
+with st.status("Carregant imatges..."):
+    download_drive_folder(folder_id=PHOTOS_FOLDER_ID, folder_path="./static/private")
+
+st.image("./static/private/IMG_20240408_112715.jpg", use_column_width=True)
 
 st.markdown("## Compte enrera! 🫣")
 countdown_placeholder = st.empty()
-asyncio.run(countdown(container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=False))
+asyncio.run(
+    countdown(container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=False)
+)
 
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
 show_maps()
@@ -271,6 +404,7 @@ with status_placeholder.status("Carregant dades...") as status:
     conn = st.connection("gsheets", type=GSheetsConnection)
 
     invitations_df = load_data(conn=conn, ttl=0)
+
     status.update(label="Dades carregades! 🎉", state="complete", expanded=False)
 status_placeholder.empty()
 
@@ -300,9 +434,16 @@ if name_surname:
                 left_col, middle_col, right_col = st.columns(3)
                 left_col.write(f"#### {acompanyant}")
                 with middle_col.popover(":green[Compta amb ell/a! 🙌]", use_container_width=True):
-                    additional_data(name_surname=acompanyant, invitations_df=invitations_df, conn=conn, accompanyant_of=name_surname)
+                    additional_data(
+                        name_surname=acompanyant,
+                        invitations_df=invitations_df,
+                        conn=conn,
+                        accompanyant_of=name_surname,
+                    )
                 if right_col.button(":red[S'ho perdrà 😢]"):
-                    confirm_no_assistance(name_surname=acompanyant, invitations_df=invitations_df, conn=conn)
+                    confirm_no_assistance(
+                        name_surname=acompanyant, invitations_df=invitations_df, conn=conn
+                    )
 else:
     st.info("Introdueix es teu nom i llinatge per poder afegir els acompanyants")
 if st.button("➕ Afegir acompanyant", use_container_width=True, disabled=not name_surname):
@@ -332,4 +473,8 @@ if not "dialog_open" in st.session_state or not st.session_state["dialog_open"]:
     if "dialog_open" in st.session_state:
         del st.session_state["dialog_open"]
     else:
-        asyncio.run(countdown(container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=True))
+        asyncio.run(
+            countdown(
+                container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=True
+            )
+        )
