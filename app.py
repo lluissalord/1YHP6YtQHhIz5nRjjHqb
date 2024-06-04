@@ -384,12 +384,24 @@ def hide_toolbar():
     st.markdown(
         """
         <style>
-        div[data-testid="stToolbar"] {
+        header[data-testid="stHeader"] {
             visibility: hidden;
             position: fixed;
             height: 0%;
         }
         </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def set_image_max_width():
+    st.markdown(
+        """
+        <style>
+        img {
+            max-width: 100%;
+        }
         """,
         unsafe_allow_html=True,
     )
@@ -404,11 +416,12 @@ WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
 
 hide_toolbar()
 set_background_image("background.jpg")
+set_image_max_width()
 
 with st.status("Carregant imatges..."):
     download_drive_folder(folder_id=PHOTOS_FOLDER_ID, folder_path="./static/private")
 
-st.image("./static/private/IMG_20240408_112715.jpg", use_column_width=True)
+st.image("./static/private/IMG_20240408_112715.jpg", width=500)
 
 st.markdown("## Compte enrera! 🫣")
 countdown_placeholder = st.empty()
