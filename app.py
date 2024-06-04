@@ -380,6 +380,21 @@ def on_name_surname_change(*args, **kwargs) -> None:
     st.session_state["data_sent"] = False
 
 
+def hide_toolbar():
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stToolbar"] {
+            visibility: hidden;
+            position: fixed;
+            height: 0%;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 st.set_page_config(
     "Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="wide"
 )
@@ -387,6 +402,7 @@ st.title("🥂 Boda Iria i Lluis 🥂")
 
 WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
 
+hide_toolbar()
 set_background_image("background.jpg")
 
 with st.status("Carregant imatges..."):
