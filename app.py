@@ -65,7 +65,6 @@ def download_drive_folder(folder_id: str, folder_path: str) -> None:
         .execute()
     )
     for file in file_list.get("files", []):
-        print(file)
         if file["mimeType"] == "application/vnd.google-apps.folder":
             download_drive_folder(
                 folder_id=file["id"],
@@ -127,7 +126,7 @@ async def countdown(
         minutes_col.metric("Minuts", minutes)
         seconds_col.metric("Segons", seconds)
         if infinte_loop:
-            r = await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
 
 def confirm_no_assistance(
@@ -300,6 +299,7 @@ def additional_data(
                 status_placeholder.empty()
                 st.success("Confirmació enviada. Contam amb voltros! 🥳")
                 return True
+    return False
 
 
 @st.cache_data
@@ -375,7 +375,7 @@ def on_name_surname_change(*args, **kwargs) -> None:
 
 
 st.set_page_config(
-    "Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="centered"
+    "Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="wide"
 )
 st.title("🥂 Boda Iria i Lluis 🥂")
 
@@ -387,7 +387,6 @@ with st.status("Carregant imatges..."):
     download_drive_folder(folder_id=PHOTOS_FOLDER_ID, folder_path="./static/private")
 
 st.image("./static/private/IMG_20240408_112715.jpg", use_column_width=True)
-st.caption("Noltros de viatge!")
 
 st.markdown("## Compte enrera! 🫣")
 countdown_placeholder = st.empty()
@@ -396,7 +395,13 @@ asyncio.run(
 )
 
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
-show_maps()
+
+left_col, right_col = st.columns([1, 1])
+with left_col:
+    st.write("Bla blah" * 100)
+
+with right_col:
+    show_maps()
 
 st.title("Confirma assistència")
 
