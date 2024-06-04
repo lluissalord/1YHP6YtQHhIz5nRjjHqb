@@ -11,6 +11,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from streamlit.delta_generator import DeltaGenerator
+from streamlit_extras.stylable_container import stylable_container
 from streamlit_gsheets import GSheetsConnection
 
 RANDOM_APM_VIDEOS = [
@@ -99,32 +100,37 @@ async def countdown(
                 timedelta.seconds // 60 % 60,
                 timedelta.seconds % 60,
             )
-        days_col, hours_col, minutes_col, seconds_col = container.columns(4)
-
-        st.markdown(
-            """
-            <style>
+        with stylable_container(
+            key="countdown",
+            css_styles=[
+                """{}
             div[data-testid="stMetric"]{
             border: 2px solid rgba(225, 225, 225, 1);
-            border-radius: 20px;
+            border-radius: 10px;
             text-align: center;
+            }
+            div[data-testid="column"]:has(> div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div > div[data-testid="stMetric"]){
+            min-width: 0 !important;
             }
             div[data-testid="stMetric"] > label[data-testid="stMetricLabel"]{
             display: flex;
             }
             div[data-testid="stMetric"] > label[data-testid="stMetricLabel"] > div p {
-            font-size: 200% !important;
+            font-size: 100% !important;
             font-family: cursive;
             }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+            div[data-testid="stMetric"] > div[data-testid="stMetricValue"] > div {
+            font-size: 50% !important;
+            font-family: cursive;
+            }""",
+            ],
+        ):
+            days_col, hours_col, minutes_col, seconds_col = container.columns(4)
+            days_col.metric("Dies", days)
+            hours_col.metric("Hores", hours)
+            minutes_col.metric("Minuts", minutes)
+            seconds_col.metric("Segons", seconds)
 
-        days_col.metric("Dies", days)
-        hours_col.metric("Hores", hours)
-        minutes_col.metric("Minuts", minutes)
-        seconds_col.metric("Segons", seconds)
         if infinte_loop:
             await asyncio.sleep(1)
 
