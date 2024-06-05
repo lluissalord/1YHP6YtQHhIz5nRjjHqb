@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import io
+import locale
 import os
 from datetime import datetime
 from random import randint
@@ -407,12 +408,43 @@ def set_image_max_width():
     )
 
 
-st.set_page_config(
-    "Boda Iria i Lluis", page_icon="🥂", initial_sidebar_state="collapsed", layout="wide"
-)
-st.title("🥂 Boda Iria i Lluis 🥂")
+st.set_page_config("Iria & Lluís", page_icon="🥂", initial_sidebar_state="collapsed", layout="wide")
 
-WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
+st.markdown(
+    """
+    <style>
+    div[data-testid="stMarkdownContainer"] {
+        font-family: 'Quicksand', sans-serif;
+    }""",
+    unsafe_allow_html=True,
+)
+
+with stylable_container(
+    key="title",
+    css_styles="""
+    h1{
+        font-size: 60px;
+        text-align: center;
+        font-weight: 100;
+        font-family: cursive;
+    }
+    p{
+        text-align: center;
+    }""",
+):
+    st.title("Iria & Lluís")
+
+    locale.setlocale(locale.LC_ALL, "ca_ES.utf8")
+    WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
+    st.write(f"{WEDDING_DATETIME.strftime('%d %B %Y')}")
+
+    countdown_placeholder = st.empty()
+    asyncio.run(
+        countdown(
+            container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=False
+        )
+    )
+
 
 hide_toolbar()
 set_background_image("background.jpg")
@@ -422,12 +454,6 @@ with st.status("Carregant imatges..."):
     download_drive_folder(folder_id=PHOTOS_FOLDER_ID, folder_path="./static/private")
 
 st.image("./static/private/IMG_20240408_112715.jpg", width=500)
-
-st.markdown("## Compte enrera! 🫣")
-countdown_placeholder = st.empty()
-asyncio.run(
-    countdown(container=countdown_placeholder, final_datetime=WEDDING_DATETIME, infinte_loop=False)
-)
 
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
 
