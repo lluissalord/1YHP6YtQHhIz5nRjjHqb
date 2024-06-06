@@ -432,7 +432,7 @@ with stylable_container(
         text-align: center;
     }""",
 ):
-    st.title("Iria & Lluís")
+    st.title("&nbsp;&nbsp;&nbsp;Iria & Lluís")
 
     WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
     st.write("28 setembre 2024")
@@ -464,7 +464,7 @@ with stylable_container(
             unsafe_allow_html=True,
         )
         st.markdown(
-            """<a href='#c15c19bd'><div class="row-widget stButton" data-testid="stButton"><button kind="secondary" data-testid="baseButton-secondary" class="st-emotion-cache-1umgz6k ef3psqc12" style="background-color: #dcedc1;"><div data-testid="stMarkdownContainer" class="st-emotion-cache-j6qv4b e1nzilvr4"><p><span style="color: rgb(49, 51, 63);">Confirmar assistència</span></p></div></button></div></a>""",
+            """<a href='#confirmation'><div class="row-widget stButton" data-testid="stButton"><button kind="secondary" data-testid="baseButton-secondary" class="st-emotion-cache-1umgz6k ef3psqc12" style="background-color: rgba(220,237,193, 0.3); border: 4px solid rgb(225, 225, 225, 1); border-radius: 10px;"><div data-testid="stMarkdownContainer" class="st-emotion-cache-j6qv4b e1nzilvr4"><p><span style="color: rgb(49, 51, 63);">Confirmar assistència</span></p></div></button></div></a>""",
             unsafe_allow_html=True,
         )
 
@@ -488,7 +488,7 @@ with stylable_container(
         st.image("./static/private/IMG_20180825_193749.jpg", width=700)
 
 st.divider()
-st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
+st.header("Com arribar a Rafal Nou")
 
 left_col, right_col = st.columns([1, 1])
 with left_col:
@@ -498,7 +498,7 @@ with right_col:
     show_maps()
 
 st.divider()
-st.title("Confirma assistència")
+st.title("Confirmar assistència", anchor="confirmation")
 
 status_placeholder = st.empty()
 with status_placeholder.status("Carregant dades...") as status:
