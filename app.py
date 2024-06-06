@@ -318,9 +318,8 @@ def static_filepath(image_filename: str) -> str:
     return f"./app/static/{image_filename}"
 
 
-def set_background_image(image_filename: str) -> None:
-    st.markdown(
-        f"""
+def set_background_image(image_filename: str) -> str:
+    return f"""
         <style>
         [data-testid="stAppViewContainer"]{{
         background-image: url("{static_filepath(image_filename)}");
@@ -330,9 +329,7 @@ def set_background_image(image_filename: str) -> None:
         background-color: rgba(0,0,0,0);
         }}
         </style>
-        """,
-        unsafe_allow_html=True,
-    )
+        """
 
 
 def show_maps():
@@ -381,9 +378,8 @@ def on_name_surname_change(*args, **kwargs) -> None:
     st.session_state["data_sent"] = False
 
 
-def hide_toolbar():
-    st.markdown(
-        """
+def hide_toolbar() -> str:
+    return """
         <style>
         header[data-testid="stHeader"] {
             visibility: hidden;
@@ -391,31 +387,33 @@ def hide_toolbar():
             height: 0%;
         }
         </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def set_image_max_width():
-    st.markdown(
         """
+
+
+def set_image_max_width() -> str:
+    return """
         <style>
         img {
             max-width: 100%;
         }
-        """,
-        unsafe_allow_html=True,
-    )
+        </style>"""
+
+
+def general_text_style() -> str:
+    return """
+        <style>
+        div[data-testid="stMarkdownContainer"] {
+            font-family: 'Quicksand', sans-serif;
+        }</style>"""
 
 
 st.set_page_config("Iria & Lluís", page_icon="🥂", initial_sidebar_state="collapsed", layout="wide")
 
 st.markdown(
-    """
-    <style>
-    div[data-testid="stMarkdownContainer"] {
-        font-family: 'Quicksand', sans-serif;
-    }""",
+    general_text_style()
+    + hide_toolbar()
+    + set_image_max_width()
+    + set_background_image("background.jpg"),
     unsafe_allow_html=True,
 )
 
@@ -445,15 +443,29 @@ with stylable_container(
         )
     )
 
-
-hide_toolbar()
-set_background_image("background.jpg")
-set_image_max_width()
-
-with st.status("Carregant imatges..."):
+with st.spinner("Carregant imatges..."):
     download_drive_folder(folder_id=PHOTOS_FOLDER_ID, folder_path="./static/private")
 
-st.image("./static/private/IMG_20240408_112715.jpg", width=500)
+with stylable_container(
+    key="introduction",
+    css_styles="""
+    > div[data-testid="stHorizontalBlock"]{
+            display: flex;
+            align-items: center !important;
+            justify-content: center !important;
+    }""",
+):
+    left_col, right_col = st.columns([2, 1])
+    left_col.image("./static/private/IMG_20240408_112715.jpg", width=700)
+    with right_col:
+        st.markdown(
+            "<span style='font-family: cursive; font-size: 30px;'>Aço es una frase super cuqui per tothom es dia que mus casam :D</span>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            """<a href='#c15c19bd'><div class="row-widget stButton" data-testid="stButton"><button kind="secondary" data-testid="baseButton-secondary" class="st-emotion-cache-1umgz6k ef3psqc12" style="background-color: #dcedc1;"><div data-testid="stMarkdownContainer" class="st-emotion-cache-j6qv4b e1nzilvr4"><p><span style="color: rgb(49, 51, 63);">Confirmar assistència</span></p></div></button></div></a>""",
+            unsafe_allow_html=True,
+        )
 
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
 
