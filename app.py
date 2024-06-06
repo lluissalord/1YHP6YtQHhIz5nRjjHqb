@@ -29,17 +29,6 @@ RANDOM_APM_VIDEOS = [
     {"data": "https://www.youtube.com/watch?v=gekAv8vRQd8", "start_time": 10},
 ]
 
-# CREDENTIALS = st.cache_resource(ttl=600, show_spinner=False)(
-#     service_account.Credentials.from_service_account_info
-# )(
-#     st.secrets["gcp_service_account"],
-#     scopes=[
-#         "https://www.googleapis.com/auth/drive",
-#     ],
-# )
-# DRIVE_SERVICE = st.cache_resource(ttl=600, show_spinner=False)(build)(
-#     "drive", "v3", credentials=CREDENTIALS
-# )
 CREDENTIALS = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"],
     scopes=[
@@ -135,6 +124,7 @@ async def countdown(
             await asyncio.sleep(1)
 
 
+@st.experimental_dialog("Confirmació de no assistència")
 def confirm_no_assistance(
     name_surname: str,
     invitations_df: pd.DataFrame,
@@ -164,6 +154,19 @@ def confirm_no_assistance(
     invitations_df = pd.concat([invitations_df, new_entry]).reset_index(drop=False)
     with st.status("Enviant confirmació de no assitència... 😢") as status:
         conn.update(worksheet="Invitations", data=invitations_df)
+
+    if st.button(":red[Tornar]", use_container_width=True):
+        st.rerun()
+
+
+@st.experimental_dialog("Confirmació enviada")
+def confirmation_sent():
+    st.session_state["dialog_open"] = True
+    st.success("Confirmació enviada 🎉")
+    st.info("Modifica les dades enviades tantes vegades com vulguis tornant a omplir el formulari")
+    st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
+    if st.button(":red[Tornar]", use_container_width=True):
+        st.rerun()
 
 
 @st.experimental_dialog("Acompanyant")
@@ -465,6 +468,26 @@ with stylable_container(
             unsafe_allow_html=True,
         )
 
+st.divider()
+st.header("Informació general")
+
+with stylable_container(
+    key="general",
+    css_styles="""
+    > div[data-testid="stHorizontalBlock"]{
+            display: flex;
+            align-items: center !important;
+            justify-content: center !important;
+    }""",
+):
+    left_col, right_col = st.columns([4, 5])
+    with left_col:
+        st.write("Bla blah" * 100)
+
+    with right_col:
+        st.image("./static/private/IMG_20180825_193749.jpg", width=700)
+
+st.divider()
 st.header("🚗🚌 Com arribar a Rafal Nou? 🚑🚓")
 
 left_col, right_col = st.columns([1, 1])
@@ -474,6 +497,7 @@ with left_col:
 with right_col:
     show_maps()
 
+st.divider()
 st.title("Confirma assistència")
 
 status_placeholder = st.empty()
@@ -501,7 +525,6 @@ if right_col.button(":red[M'ho perdré 😢]", use_container_width=True):
     else:
         confirm_no_assistance(name_surname=name_surname, invitations_df=invitations_df, conn=conn)
 
-st.divider()
 st.subheader("🧑‍🤝‍🧑 Acompanyants 🧑‍🤝‍🧑")
 if name_surname:
     acompanyants = invitations_df[invitations_df["Accompanyant of"] == name_surname]
@@ -527,6 +550,30 @@ if st.button("➕ Afegir acompanyant", use_container_width=True, disabled=not na
     acompanyant_dialog(accompanyant_of=name_surname, invitations_df=invitations_df, conn=conn)
 
 st.divider()
+st.header("Regal 🎁")
+
+with stylable_container(
+    key="present",
+    css_styles="""
+    > div[data-testid="stHorizontalBlock"]{
+            display: flex;
+            align-items: center !important;
+            justify-content: center !important;
+    }""",
+):
+    left_col, right_col = st.columns([1, 2])
+    with left_col:
+        st.write("Bla blah" * 10)
+        st.write("ESXX XXXX XXXX XX XXXXXX")
+
+    right_col.image("./static/private/DSC_4406.JPG", width=700)
+
+st.divider()
+st.markdown("### Contacte")
+st.write("Iria: 619 47 85 42")
+st.write("Lluis: 665 53 80 14")
+
+st.divider()
 if st.button("😹 Video random d'APM 😹", use_container_width=True):
     st.info("Clickeu de nou per veure un altre")
     video_random = RANDOM_APM_VIDEOS[randint(0, len(RANDOM_APM_VIDEOS) - 1)]
@@ -536,13 +583,12 @@ if "data_sent" not in st.session_state:
     st.session_state["data_sent"] = False
 
 if st.session_state["data_sent"]:
-    st.info("Modifica les dades enviades tantes vegades com vulguis tornant a omplir el formulari")
-    st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
     st.balloons()
     st.session_state["data_sent"] = False
+    confirmation_sent()
 
 left_col, _, right_col = st.columns([2, 1, 1])
-left_col.caption("Made with ❤️ by Iria and Lluis")
+left_col.caption("Made with ❤️ by Iria & Lluis")
 right_col.caption("Background by [Freepik](www.freepik.es)")
 
 # MUST BE AT THE END
