@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import io
-import locale
 import os
 from datetime import datetime
 from random import randint
@@ -432,9 +431,8 @@ with stylable_container(
 ):
     st.title("Iria & Lluís")
 
-    locale.setlocale(locale.LC_ALL, "ca_ES.utf8")
     WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
-    st.write(f"{WEDDING_DATETIME.strftime('%d %B %Y')}")
+    st.write("28 setembre 2024")
 
     countdown_placeholder = st.empty()
     asyncio.run(
