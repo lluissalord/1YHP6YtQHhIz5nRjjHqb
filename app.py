@@ -406,7 +406,14 @@ def general_text_style() -> str:
         <style>
         div[data-testid="stMarkdownContainer"] {
             font-family: 'Quicksand', sans-serif;
-        }</style>"""
+        }
+        h1{
+            text-align: center;
+        }
+        h2{
+            text-align: center;
+        }
+        </style>"""
 
 
 st.set_page_config("Iria & Lluís", page_icon="🥂", initial_sidebar_state="collapsed", layout="wide")
@@ -569,7 +576,7 @@ with stylable_container(
     right_col.image("./static/private/DSC_4406.JPG", width=700)
 
 st.divider()
-st.markdown("### Contacte")
+st.header("Contacte 📞")
 st.write("Iria: 619 47 85 42")
 st.write("Lluis: 665 53 80 14")
 
