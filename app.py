@@ -629,6 +629,7 @@ if "data_sent" not in st.session_state:
     st.session_state["data_sent"] = False
 
 if st.session_state["data_sent"]:
+    st.ballons()
     st.session_state["data_sent"] = False
     confirmation_sent()
 
