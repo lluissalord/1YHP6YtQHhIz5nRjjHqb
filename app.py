@@ -615,8 +615,9 @@ with stylable_container(
 
 st.divider()
 st.header("Contacte 📞")
-st.write("Iria: 619 47 85 42")
-st.write("Lluis: 665 53 80 14")
+st.write("Si necesitau ajuda o teniu dubtes:")
+st.write("Iria - 619 47 85 42")
+st.write("Lluis - 665 53 80 14")
 
 st.divider()
 if st.button("😹 Video random d'APM 😹", use_container_width=True):
