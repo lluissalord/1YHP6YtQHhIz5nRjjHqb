@@ -163,6 +163,7 @@ def confirm_no_assistance(
 def confirmation_sent():
     st.session_state["dialog_open"] = True
     st.success("Confirmació enviada 🎉")
+    st.balloons()
     st.info("Modifica les dades enviades tantes vegades com vulguis tornant a omplir el formulari")
     st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
     if st.button(":red[Tornar]", use_container_width=True):
@@ -439,7 +440,7 @@ with stylable_container(
     st.title("&nbsp;&nbsp;&nbsp;Iria & Lluís")
 
     WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
-    st.write("28 setembre 2024")
+    st.write("*28 setembre 2024*")
 
     countdown_placeholder = st.empty()
     asyncio.run(
@@ -627,7 +628,6 @@ if "data_sent" not in st.session_state:
     st.session_state["data_sent"] = False
 
 if st.session_state["data_sent"]:
-    st.balloons()
     st.session_state["data_sent"] = False
     confirmation_sent()
 
