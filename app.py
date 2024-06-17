@@ -334,17 +334,14 @@ def set_background_image(image_filename: str) -> str:
         """
 
 
-def show_maps():
-    maps_url = "https://maps.app.goo.gl/8iKreRxjmVgRahaJA"
+def show_maps(maps_url: str):
     st.markdown(
         f"""<a href="{maps_url}">
         <img src="{static_filepath('place_maps_from_mao_creus.png')}" width="100%">
         </a>""",
         unsafe_allow_html=True,
     )
-    st.link_button(
-        "🗺️ Google Maps 🗺️", url="https://maps.app.goo.gl/8iKreRxjmVgRahaJA", use_container_width=True
-    )
+    st.link_button("🗺️ Google Maps 🗺️", url=maps_url, use_container_width=True)
 
 
 def load_data(conn: GSheetsConnection, ttl: int = 0) -> pd.DataFrame:
@@ -467,7 +464,7 @@ with stylable_container(
     left_col.image("./static/private/IMG_20240408_112715.jpg", width=700)
     with right_col:
         st.markdown(
-            "<span style='font-family: cursive; font-size: 30px;'>Aço es una frase super cuqui per tothom es dia que mus casam :D</span>",
+            "<span style='font-family: cursive; font-size: 30px;'>Les millors coses de la vida mereixen ser compartides</span>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -489,7 +486,11 @@ with stylable_container(
 ):
     left_col, right_col = st.columns([4, 5])
     with left_col:
-        st.write("Bla blah" * 100)
+        # st.write("Bla blah" * 100)
+        st.image(
+            "./static/private/info_general.png",
+            width=700,
+        )
 
     with right_col:
         st.image("./static/private/IMG_20180825_193749.jpg", width=700)
@@ -497,12 +498,48 @@ with stylable_container(
 st.divider()
 st.header("Com arribar a Rafal Nou")
 
-left_col, right_col = st.columns([1, 1])
-with left_col:
-    st.write("Bla blah" * 100)
+with stylable_container(
+    key="transport",
+    css_styles="""
+    > div[data-testid="stHorizontalBlock"]{
+            display: flex;
+            align-items: center !important;
+            justify-content: left !important;
+    }""",
+):
+    left_col, right_col = st.columns([1, 1])
+    with left_col:
+        st.subheader("Cotxe 🚗")
+        MAPS_URL = "https://www.google.es/maps/dir/40.0069424,3.8653728/39.9993034,3.849767/39.9980888,3.8693066/@40.0042387,3.8516959,2948m/data=!3m1!1e3!4m6!4m5!1m0!1m0!1m1!4e1!3e0?entry=ttu"
+        st.write(
+            f"**Parking disponible** per cotxes a s'ubicació de [Google Maps]({MAPS_URL}). Es pot recollir es cotxe es **dia següent** en voler sense problemes."
+        )
 
-with right_col:
-    show_maps()
+        st.subheader("Taxi 🚕")
+        st.write(
+            "En taxi es tarda **menys de 10 minuts** al centre de Ciutadella - [971 48 22 22](tel:+34971482222)"
+        )
+
+        st.subheader("Bus 🚌")
+        inner_left_col, inner_right_col = st.columns([1, 1])
+        with inner_left_col:
+            st.markdown(
+                "<span style='font-size:1.3em;font-weight:bold'>Maó</span>", unsafe_allow_html=True
+            )
+            st.write(
+                "Sortida de **Maó** a les **11:00h**. Pot passar per altres pobles sota demanda."
+            )
+            st.write("Tornada a les **00:30h** (fi de festa)")
+        with inner_right_col:
+            st.markdown(
+                "<span style='font-size:1.3em;font-weight:bold'>Ciutadella</span>",
+                unsafe_allow_html=True,
+            )
+            st.write("Sortida de **Ciutadella** a les **11:40h**.")
+            st.write("Tornada a les **00:00h** (fi de festa)")
+
+    with right_col:
+        show_maps(MAPS_URL)
 
 st.divider()
 st.title("Confirmar assistència", anchor="confirmation")
@@ -570,8 +607,9 @@ with stylable_container(
 ):
     left_col, right_col = st.columns([1, 2])
     with left_col:
-        st.write("Bla blah" * 10)
-        st.write("ESXX XXXX XXXX XX XXXXXX")
+        st.write("Poder compartir amb voltros aquest dia tant especial significa molt")
+        st.write("Si voleu tenir un detall")
+        st.write("*ES92 2100 1885 8601 0012 4252*")
 
     right_col.image("./static/private/DSC_4406.JPG", width=700)
 
