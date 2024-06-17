@@ -486,14 +486,13 @@ with stylable_container(
 ):
     left_col, right_col = st.columns([4, 5])
     with left_col:
-        # st.write("Bla blah" * 100)
         st.image(
             "./static/private/info_general.png",
             width=700,
         )
 
     with right_col:
-        st.image("./static/private/IMG_20180825_193749.jpg", width=700)
+        st.image("./static/private/IMG_20220822_193418.jpg", width=700)
 
 st.divider()
 st.header("Com arribar a Rafal Nou")
