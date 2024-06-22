@@ -163,6 +163,7 @@ def confirm_no_assistance(
 def confirmation_sent():
     st.session_state["dialog_open"] = True
     st.success("Confirmació enviada 🎉")
+    st.balloons()
     st.info("Modifica les dades enviades tantes vegades com vulguis tornant a omplir el formulari")
     st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", autoplay=True)
     if st.button(":red[Tornar]", use_container_width=True):
@@ -439,7 +440,7 @@ with stylable_container(
     st.title("&nbsp;&nbsp;&nbsp;Iria & Lluís")
 
     WEDDING_DATETIME = datetime(2024, 9, 28, 12, 0, 0)
-    st.write("28 setembre 2024")
+    st.write("*28 setembre 2024*")
 
     countdown_placeholder = st.empty()
     asyncio.run(
@@ -614,8 +615,9 @@ with stylable_container(
 
 st.divider()
 st.header("Contacte 📞")
-st.write("Iria: 619 47 85 42")
-st.write("Lluis: 665 53 80 14")
+st.write("Si necesitau ajuda o teniu dubtes:")
+st.write("Iria - 619 47 85 42")
+st.write("Lluis - 665 53 80 14")
 
 st.divider()
 if st.button("😹 Video random d'APM 😹", use_container_width=True):
